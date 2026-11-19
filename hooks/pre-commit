@@ -1,0 +1,10 @@
+#!/bin/sh
+# Reference client hook: refuse a commit whose staged changes contain a secret (gitleaks, with the
+# platform's rules). Install once per clone:   git config core.hooksPath hooks
+#
+# This is fast feedback, not the wall: `git commit --no-verify` skips it, and the forge's
+# pre-receive hook runs the same check on every push. A false positive is cleared with a line in
+# .gitleaksignore (the fingerprint gitleaks prints, `file:rule:line`) and a comment saying why;
+# never by changing the code.
+command -v gitleaks >/dev/null 2>&1 || { echo "pre-commit: gitleaks is not installed, secret check skipped (the forge still checks)" >&2; exit 0; }
+exec gitleaks git --pre-commit --staged --redact --no-banner --verbose .

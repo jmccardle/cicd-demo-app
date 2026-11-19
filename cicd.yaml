@@ -1,0 +1,22 @@
+# What the platform needs to know about this app (cicd-ref-arch docs/contract.md). The platform
+# fills in the cluster, the zone and the registry; this file never names them.
+apiVersion: cicd.ffwf.net/v1alpha1
+kind: App
+metadata: {name: demo}
+spec:
+  build: {context: ., dockerfile: Dockerfile}
+  deploy: {path: deploy}              # kustomize base; the container image is the name `app-image`
+  service: {name: demo, port: 80}
+  workload: {kind: Deployment, name: demo}
+  test:
+    run: python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt && .venv/bin/python -m unittest discover -s tests -v
+  environments:
+    dev:    {branch: main, host: "{app}-dev.{cluster}.{zone}"}
+    branch: {host: "{app}-{branch}.{cluster}.{zone}", exclude: ["renovate/*"]}
+    prod:   {host: "{app}.{cluster}.{zone}"}
+  scaleToZero:
+    enabled: true
+    idleSeconds: 900          # 15 minutes without requests -> 0 pods
+    coldStartTimeout: 60s
+    maxReplicas: 3
+    targetConcurrency: 50

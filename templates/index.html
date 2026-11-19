@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ info.app }} {{ info.version }}</title>
+<style>
+  body { font: 16px/1.5 system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; color: #1d1d1f; }
+  .meta { color: #555; font-size: .9rem; }
+  form { display: grid; gap: .5rem; margin: 1.5rem 0; }
+  input, textarea, button { font: inherit; padding: .4rem .6rem; }
+  li { margin: .4rem 0; }
+  .who { font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>Guestbook</h1>
+<p class="meta">{{ info.app }} {{ info.version }} · commit <code>{{ info.commit }}</code> · environment <code>{{ info.env }}</code></p>
+<form method="post" action="/sign">
+  <input name="name" placeholder="name" maxlength="40">
+  <textarea name="message" placeholder="message" maxlength="280" required></textarea>
+  <button>Sign</button>
+</form>
+<ul>
+{% for e in entries %}
+  <li><span class="who">{{ e.name }}</span> <span class="meta">{{ e.at }}</span><br>{{ e.message }}</li>
+{% else %}
+  <li class="meta">No entries yet. This pod started recently, or scaled up from zero.</li>
+{% endfor %}
+</ul>
+</body>
+</html>

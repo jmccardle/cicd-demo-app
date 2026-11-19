@@ -1,0 +1,12 @@
+# This app's security records (cicd-ref-arch docs/security.md). Suppressions need a reason and an
+# expiry date; the platform's floor can be tightened here, never loosened.
+apiVersion: cicd.ffwf.net/v1alpha1
+kind: SecurityPolicy
+ignore:
+- rule: CKV_DOCKER_7
+  path: "Dockerfile:*"
+  reason: "false positive: FROM ${BUILD}/${BASE} are ARGs pinned by digest, which checkov cannot resolve"
+  expires: 2027-05-19
+- rule: CKV_K8S_11
+  reason: "no CPU limit on purpose: a throttled cold start is slower, and requests already reserve CPU"
+  expires: 2027-05-19
