@@ -1,0 +1,86 @@
+# The cicd-ref-arch pipeline for an enrolled app in its own repo (docs/enroll.md). `tools/enroll.py`
+# installs this as .forgejo/workflows/cicd.yaml and sets what it needs on the app repo:
+#   variable CICD_BOT_USER, secret CICD_BOT_TOKEN  - may push to the state repo
+#   variable CICD_CLUSTER                          - which cluster's environments to write
+# The app's developers own everything else in the repo: code, tests, Dockerfile, deploy/, cicd.yaml
+# and the suppression records in security/. The platform decides build, scans, gates and deploys.
+#
+#   push to the dev branch  -> test, build, scan, deploy dev     https://<app>-dev.<cluster>.<zone>/
+#   push to another branch  -> test, build, scan, deploy branch  https://<app>-<branch>.<cluster>.<zone>/
+#   delete a branch         -> its environment is removed
+name: cicd
+on:
+  push:
+  delete:
+  workflow_dispatch:
+
+env:
+  APP: .                    # where cicd.yaml is, relative to the repo root
+  CLUSTER: ${{ vars.CICD_CLUSTER || 'c-local' }}
+  CICD_REPO: ffwf/cicd-ref-arch
+  CICD_REF: master          # pin a tag once the platform has releases
+
+jobs:
+  test:
+    if: github.event_name != 'delete'
+    runs-on: ffwf-k8s
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
+      with: {repository: "${{ env.CICD_REPO }}", ref: "${{ env.CICD_REF }}", path: .cicd}
+    - uses: ./.cicd/actions/setup
+    - uses: ./.cicd/actions/test
+      with: {app: "${{ env.APP }}"}
+    - if: always()
+      uses: actions/upload-artifact@v3
+      with: {name: ci-result-test, path: ci-result/}
+
+  deliver:
+    needs: test
+    runs-on: ffwf-k8s
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
+      with: {repository: "${{ env.CICD_REPO }}", ref: "${{ env.CICD_REF }}", path: .cicd}
+    - uses: ./.cicd/actions/setup
+    - id: env
+      run: echo "env=$(python3 .cicd/tools/cicd.py which-env $APP/cicd.yaml --branch '${{ github.ref_name }}')" >> "$GITHUB_OUTPUT"
+    - id: build
+      if: steps.env.outputs.env != 'skip'
+      uses: ./.cicd/actions/build
+      with: {app: "${{ env.APP }}", cluster: "${{ env.CLUSTER }}"}
+    - id: security
+      if: steps.env.outputs.env != 'skip'
+      uses: ./.cicd/actions/security
+      with: {app: "${{ env.APP }}", env: "${{ steps.env.outputs.env }}", image: "${{ steps.build.outputs.image }}"}
+    - if: steps.env.outputs.env != 'skip'
+      uses: ./.cicd/actions/sign
+      with: {image: "${{ steps.build.outputs.image }}", out: build/security}
+    - if: steps.env.outputs.env != 'skip'
+      uses: ./.cicd/actions/deploy-env
+      with:
+        app: ${{ env.APP }}
+        cluster: ${{ env.CLUSTER }}
+        env: ${{ steps.env.outputs.env }}
+        branch: ${{ github.ref_name }}
+        image: ${{ steps.build.outputs.image }}
+        manifests: build/app.yaml
+        token: ${{ secrets.CICD_BOT_TOKEN }}
+        user: ${{ vars.CICD_BOT_USER }}
+        state-repo: ${{ env.CICD_REPO }}
+    - if: always() && steps.env.outputs.env != 'skip'
+      uses: actions/upload-artifact@v3
+      with: {name: deliver, path: "build/security/\nbuild/app.yaml\nbuild/build-metadata.json"}
+
+  # a deleted branch: ask the platform to remove its environment now instead of within 5 minutes
+  cleanup:
+    if: github.event_name == 'delete'
+    runs-on: ffwf-k8s
+    steps:
+    - env:
+        TOKEN: ${{ secrets.CICD_BOT_TOKEN }}
+      run: |
+        curl -fsS -X POST -H "Authorization: token $TOKEN" -H 'Content-Type: application/json' \
+          -d '{"ref": "master"}' \
+          '${{ github.server_url }}/api/v1/repos/${{ env.CICD_REPO }}/actions/workflows/environments.yaml/dispatches'
+        echo "asked ${{ env.CICD_REPO }} to remove environments of deleted branches"
