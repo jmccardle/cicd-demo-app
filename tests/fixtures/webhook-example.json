@@ -1,0 +1,7 @@
+{
+  "description": "Example payload from the upstream webhook docs, used to test parsing. Not a credential.",
+  "endpoint": "https://example.invalid/hooks/guestbook",
+  "signing_secret": "whsec_EmeYN0Nd5qROr7Ao0CBSosAwhvFdacBn",
+  "event": "entry.created",
+  "data": {"name": "ada", "message": "hello"}
+}
