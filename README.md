@@ -36,7 +36,8 @@ Never change code to satisfy a scanner. Record the decision instead, and it is r
 
 ## Note
 
-`requirements.txt` pins Werkzeug 3.0.1 on purpose: it has known vulnerabilities, so the demo has something
-for the prod gate to refuse. This app only runs on a private test cluster.
+Until 0.2.0, `requirements.txt` pinned Werkzeug 3.0.1 on purpose: it has known vulnerabilities, so the demo had
+something for the prod gate to refuse (see the history of `requirements.txt`). This app only runs on a private
+test cluster.
 
 MIT licensed.

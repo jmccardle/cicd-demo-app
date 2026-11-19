@@ -1,5 +1,3 @@
-# Pinned on purpose to a Werkzeug release with known vulnerabilities, so the platform's prod gate
-# has something to refuse in the demo (docs/demo.md, step 5). Bumping Werkzeug is the fix.
-flask==3.0.3
-werkzeug==3.0.1
+flask==3.1.3
+werkzeug==3.1.9
 gunicorn==23.0.0

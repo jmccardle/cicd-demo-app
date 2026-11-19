@@ -9,7 +9,7 @@ import os
 
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 app = Flask(__name__)
 entries: list[dict] = []
