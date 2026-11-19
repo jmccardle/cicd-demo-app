@@ -1,0 +1,5 @@
+# Each line is a gitleaks finding we have judged not to be a secret: file:rule:line, then why.
+# Reviewed with every promotion to prod (cicd-ref-arch docs/security.md).
+
+# example payload copied from the upstream webhook docs; the signing secret is a placeholder
+tests/fixtures/webhook-example.json:generic-api-key:4
