@@ -16,6 +16,7 @@
 </head>
 <body>
 <h1>Guestbook</h1>
+<p class="meta">Sign the book. Entries live in memory, so they reset when the app scales to zero.</p>
 <p class="meta">{{ info.app }} {{ info.version }} · commit <code>{{ info.commit }}</code> · environment <code>{{ info.env }}</code></p>
 <form method="post" action="/sign">
   <input name="name" placeholder="name" maxlength="40">
