@@ -24,6 +24,9 @@ class App(unittest.TestCase):
         self.assertNotIn("<script>alert(1)</script>", page)
         self.assertIn("&lt;script&gt;", page)
 
+    def test_hsts(self):
+        self.assertIn("max-age=", self.c.get("/").headers.get("Strict-Transport-Security", ""))
+
     def test_empty_message_ignored(self):
         self.c.post("/sign", data={"name": "x", "message": "  "})
         self.assertEqual(demo.entries, [])

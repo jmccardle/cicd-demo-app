@@ -9,10 +9,17 @@ import os
 
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 
 app = Flask(__name__)
 entries: list[dict] = []
+
+
+@app.after_request
+def security_headers(resp):
+    # HSTS: IT Security's finding TEN-142960 (the platform serves every app over HTTPS only)
+    resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return resp
 
 
 def info() -> dict:
